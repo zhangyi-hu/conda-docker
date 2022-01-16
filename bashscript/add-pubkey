@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+if [[ $# -ne 1 ]]; then
+  echo "usage: add_pubkey pubkey_str"
+  echo "args received: $*"
+  exit 1
+else
+  pk=$1
+fi
+
+# add authorized public key
+mkdir -p ~/.ssh
+chmod go-rwx ~/.ssh
+echo "${pk}" > ~/.ssh/authorized_keys
+chmod go-rw ~/.ssh/authorized_keys
+
+# show file permissions
+ls -al ~
+ls -al ~/.ssh

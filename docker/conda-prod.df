@@ -1,0 +1,19 @@
+FROM huzhangyi/miniconda3
+RUN apt-get -qq update && apt-get -qq upgrade && apt-get -qq install netcat
+RUN conda update -n base conda \
+  && conda install -c conda-forge mamba
+
+# create user prod with no password, set default shell as bash
+RUN useradd -m -u 9000 prod \
+    && passwd -d prod \
+    && usermod -s /bin/bash prod \
+    && echo "source ~/.bashrc" >> /home/prod/.bash_profile \
+    && chown -R prod:prod /home/prod \
+    #  give develop ownership of conda directory
+    && chown -R prod:prod /opt/conda
+
+USER prod
+
+# init conda for user prod
+RUN conda init bash
+

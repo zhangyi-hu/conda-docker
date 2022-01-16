@@ -1,0 +1,54 @@
+FROM huzhangyi/miniconda3
+RUN apt-get -qq update && apt-get -qq upgrade
+
+# install sudo and netcat, nc will be used to check servers
+RUN apt-get -qq update && apt-get -qq install sudo netcat
+
+# install ssh server
+RUN apt-get -qq update \
+	&& apt-get -qq install openssh-server \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& apt-get clean
+
+
+RUN conda update -n base conda \
+  && conda install -c conda-forge mamba
+
+
+# config ssh service
+RUN sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+RUN sed -i 's/#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+
+# create user develop with no password, set its default shell as bash
+RUN useradd develop \
+    # remove password
+    && passwd -d develop \
+    #  add user develop to group sudo
+    && adduser develop sudo \
+    #  bash as default shell
+    && usermod -s /bin/bash develop \
+    && mkdir /home/develop \
+    #  .bashrc will be used by conda
+    && echo "source ~/.bashrc" >> /home/develop/.bash_profile \
+    && chown -R develop:develop /home/develop \
+    #  give develop ownership of conda directory
+    && chown -R develop:develop /opt/conda
+
+# helper scripts
+COPY bashscript/add-pubkey /usr/local/bin/
+RUN chmod +x /usr/local/bin/add-pubkey
+COPY bashscript/conda-dump /usr/local/bin/
+RUN chmod +x /usr/local/bin/conda-dump
+
+# prepare the sshd run in the foreground manually, not needed if we use sudo service ssh start
+RUN mkdir -p /var/run/sshd
+
+USER develop
+
+# init conda for user develop, .bashrc will be appended with conda specific settings
+RUN conda init bash
+
+# default command, SSH_PK is an environmental variable that the user need to specify
+# run sshd manually on the foreground
+CMD add-pubkey "${SSH_PK}" && sudo /usr/sbin/sshd -D -e
+

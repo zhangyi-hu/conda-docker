@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  miniconda3:
+    image: huzhangyi/miniconda3:latest
+    build:
+      context: ../
+      dockerfile: docker/miniconda3.df
+
+  conda-dev:
+    image: huzhangyi/conda-dev:latest
+    build:
+      context: ../
+      dockerfile: docker/conda-dev.df
+
+  conda-prod:
+    image: huzhangyi/conda-prod:latest
+    build:
+      context: ../
+      dockerfile: docker/conda-prod.df
+
